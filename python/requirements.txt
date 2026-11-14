@@ -3,6 +3,9 @@ python-dotenv==1.0.1
 SQLAlchemy==2.1.8
 pandas==3.1.1
 
+# PostgreSQL driver (used when DATABASE_URL is postgresql://...)
+psycopg[binary]==3.3.9
+
 # Internal API
 fastapi==0.162.7
 uvicorn==0.54.0
@@ -12,5 +15,4 @@ pytest==9.2.0
 httpx==0.28.1
 
 # Optional database drivers (install the one matching DATABASE_URL):
-#   PostgreSQL: psycopg[binary]
 #   MySQL:      pymysql

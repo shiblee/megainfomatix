@@ -1,0 +1,77 @@
+# Render Blueprint — deploys the whole stack from this repo.
+# Render dashboard → New → Blueprint → select this repository.
+# Every push to `main` redeploys automatically.
+
+databases:
+  - name: megainfomatix-db
+    databaseName: megainfomatix
+    user: megainfomatix
+
+services:
+  # React frontend → https://megainfomatix.com
+  - type: web
+    name: megainfomatix-web
+    runtime: static
+    rootDir: client
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite        # let React Router handle every path
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        value: https://api.megainfomatix.com/api
+      - key: VITE_APP_NAME
+        value: MegaInfomatix
+    domains:
+      - megainfomatix.com
+      - www.megainfomatix.com
+
+  # Node.js API → https://api.megainfomatix.com
+  - type: web
+    name: megainfomatix-api
+    runtime: node
+    rootDir: server
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DB_AUTO_MIGRATE
+        value: "true"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: megainfomatix-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 1d
+      - key: CLIENT_URL
+        value: https://megainfomatix.com,https://www.megainfomatix.com
+      - key: PYTHON_SERVICE_URL
+        fromService:
+          type: pserv
+          name: megainfomatix-analytics
+          property: hostport
+    domains:
+      - api.megainfomatix.com
+
+  # Python monitoring/analysis → internal only (reachable by the API, not the internet)
+  - type: pserv
+    name: megainfomatix-analytics
+    runtime: python
+    rootDir: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python src/main.py serve --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.5
+      - key: PYTHON_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: megainfomatix-db
+          property: connectionString

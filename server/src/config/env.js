@@ -23,6 +23,13 @@ const toBool = (value, fallback) => {
   return ['1', 'true', 'yes', 'on'].includes(String(value).toLowerCase());
 };
 
+// Accepts "http://host:port" or a bare "host:port" (as provided by Render's fromService.hostport).
+const normalizeServiceUrl = (value) => {
+  const url = String(value || '').trim().replace(/\/+$/, '');
+  if (!url) return '';
+  return /^https?:\/\//.test(url) ? url : `http://${url}`;
+};
+
 const env = process.env.NODE_ENV || 'development';
 
 const config = Object.freeze({
@@ -42,7 +49,7 @@ const config = Object.freeze({
     secret: process.env.JWT_SECRET || '',
     expiresIn: process.env.JWT_EXPIRES_IN || '1d',
   }),
-  pythonServiceUrl: (process.env.PYTHON_SERVICE_URL || '').replace(/\/+$/, ''),
+  pythonServiceUrl: normalizeServiceUrl(process.env.PYTHON_SERVICE_URL),
   pythonServiceTimeoutMs: Number(process.env.PYTHON_SERVICE_TIMEOUT_MS) || 10000,
 });
 

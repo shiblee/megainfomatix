@@ -15,7 +15,7 @@ from functools import lru_cache
 from pathlib import Path
 
 import pandas as pd
-from sqlalchemy import Engine, create_engine, inspect, text
+from sqlalchemy import Engine, column, create_engine, func, inspect, select, table, text
 from sqlalchemy.pool import StaticPool
 
 from config.config import ROOT_DIR, get_settings
@@ -76,18 +76,24 @@ def list_tables(engine: Engine | None = None) -> list[str]:
     )
 
 
+def table_ref(name: str):
+    """Dialect-safe table reference (correct identifier quoting on SQLite/PostgreSQL/MySQL)."""
+    return table(name)
+
+
 def count_rows(table: str, engine: Engine | None = None) -> int:
     engine = engine or get_engine()
     if table not in list_tables(engine):
         raise ValueError(f"Unknown table: {table}")
     with engine.connect() as conn:
-        return int(conn.execute(text(f'SELECT COUNT(*) FROM "{table}"')).scalar_one())
+        return int(conn.execute(select(func.count()).select_from(table_ref(table))).scalar_one())
 
 
 def read_table(table: str, engine: Engine | None = None, columns: list[str] | None = None) -> pd.DataFrame:
     engine = engine or get_engine()
     if table not in list_tables(engine):
         return pd.DataFrame(columns=columns or [])
-    cols = ", ".join(f'"{c}"' for c in columns) if columns else "*"
+    selected = [column(c) for c in columns] if columns else [text("*")]
+    query = select(*selected).select_from(table_ref(table))
     with engine.connect() as conn:
-        return pd.read_sql(text(f'SELECT {cols} FROM "{table}"'), conn)
+        return pd.read_sql(query, conn)

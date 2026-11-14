@@ -263,6 +263,11 @@ component, or create a new page and point the `index: true` route in `client/src
 at it. If the Index page needs its own full-screen shell, add it as a separate top-level route
 with its own layout. Global theme tokens live in `client/src/styles/global.css`.
 
+## Deployment
+
+Production runs on Render at **https://megainfomatix.com**. See [DEPLOYMENT.md](DEPLOYMENT.md)
+for the Render setup and GoDaddy DNS records.
+
 ## Notes
 
 - Registration is currently open and every new user gets the `user` role. Restrict or seed an
