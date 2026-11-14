@@ -7,6 +7,6 @@ const router = express.Router();
 router.use(authenticate);
 
 // GET /api/analysis -> analysis summary from the Python layer
-router.get('/', forward('/analysis/summary', { message: 'Analysis summary fetched successfully' }));
+router.get('/', forward('analysis-summary', { message: 'Analysis summary fetched successfully' }));
 
 module.exports = router;

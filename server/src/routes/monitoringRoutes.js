@@ -7,6 +7,6 @@ const router = express.Router();
 router.use(authenticate);
 
 // GET /api/monitoring -> latest monitoring snapshot from the Python layer
-router.get('/', forward('/monitoring/snapshot', { message: 'Monitoring snapshot fetched successfully' }));
+router.get('/', forward('monitoring-snapshot', { message: 'Monitoring snapshot fetched successfully' }));
 
 module.exports = router;

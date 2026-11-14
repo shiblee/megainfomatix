@@ -1,71 +1,98 @@
-# Deployment: megainfomatix.com (Render + GoDaddy)
+# Deployment: https://megainfomatix.com (GoDaddy cPanel hosting)
+
+MegaInfomatix runs on the same GoDaddy cPanel account as the other sites, following the
+same pattern as nawaratrend.com. **Only touch the `megainfomatix` folders listed below.**
+The account also hosts misoftwaresolutions.com (main domain, `public_html`) and several addon domains.
 
 ```text
-https://megainfomatix.com, https://www.megainfomatix.com → React static site   (megainfomatix-web)
-https://api.megainfomatix.com                           → Node.js API          (megainfomatix-api)
-internal only                                           → Python analytics     (megainfomatix-analytics)
-internal only                                           → PostgreSQL           (megainfomatix-db)
+https://megainfomatix.com ─► Apache + Passenger ─► ~/megainfomatix/server   (Node.js 22)
+                                                   ├─ serves the React build  (~/megainfomatix/client/dist)
+                                                   ├─ /api/*                  REST API
+                                                   ├─ MySQL "megainfomatix"   (cPanel database)
+                                                   └─ runs Python on demand   (~/megainfomatix/python/venv, Python 3.11)
+cron, every 15 min ─► python src/main.py monitor --once   (log: ~/megainfomatix/logs/monitor.log)
 ```
 
-Everything is defined in [`render.yaml`](render.yaml). Every push to `main` redeploys automatically.
+There is no separate Python web service. Shared hosting doesn't allow long-running background
+processes, so Node runs `python src/main.py query <operation>` when an analytics endpoint is called
+(`PYTHON_BIN` in the server's `.env`).
 
-## 1. Create the services on Render
+## Server layout
 
-1. Sign up at https://render.com with **"Sign in with GitHub"**, and allow access to `shiblee/megainfomatix`.
-2. Dashboard → **New +** → **Blueprint** → select the `megainfomatix` repo → **Connect**.
-3. Render reads `render.yaml` and lists 1 database and 3 services. Choose a plan for each.
-   The static site is free; the API, the Python private service and PostgreSQL need paid instance types.
-   See https://render.com/pricing for current prices.
-4. Click **Apply**. The first build takes about 5–10 minutes. Wait until all four show **Live**.
-5. Check the API's temporary URL: `https://megainfomatix-api.onrender.com/api/health` should return
-   `"database":"ok","python":"ok"`. If a service name was already taken, Render adds a suffix;
-   use the exact `*.onrender.com` names shown in the dashboard below.
+| Path | What |
+|---|---|
+| `~/megainfomatix/server` | Node.js app (with `.env`), outside public_html so secrets can't be downloaded |
+| `~/megainfomatix/client/dist` | Built React app, served by the Node app |
+| `~/megainfomatix/python` | Python layer (with `.env`), `venv/` and `output/` (reports, monitoring history) |
+| `~/megainfomatix/logs/monitor.log` | Output of the scheduled monitoring job |
+| `~/public_html/megainfomatix.com/.htaccess` | Passenger settings that run the Node app for the domain |
+| `~/nodejs/bin/node` | Node.js 22, shared by the Node apps on this account |
+| MySQL `megainfomatix`, user `megainfomatix` | Credentials only in `deploy/production.env` (on the Mac) and the server `.env` files |
+| SSH | `ssh mjgykn3s9utp@184.168.114.12` with this Mac's key |
 
-`JWT_SECRET` is generated automatically. `DATABASE_URL` and `PYTHON_SERVICE_URL` are wired between services.
+## Deploying an update (one command)
 
-## 2. Point the domain at Render (GoDaddy DNS)
-
-GoDaddy → **My Products** → next to **megainfomatix.com** click **DNS** (or Manage → DNS).
-
-**Remove**
-- the `A` record with name `@` that points to GoDaddy's parking page ("Parked")
-- any `CNAME` record named `www` (usually pointing to `@` or `megainfomatix.com`)
-
-**Add**
-
-| Type | Name | Value | TTL |
-|---|---|---|---|
-| A | `@` | `216.24.57.1` (confirm in Render → megainfomatix-web → Settings → Custom Domains) | 1 hour |
-| CNAME | `www` | `megainfomatix-web.onrender.com` | 1 hour |
-| CNAME | `api` | `megainfomatix-api.onrender.com` | 1 hour |
-
-## 3. Verify the domains and HTTPS
-
-1. Render → **megainfomatix-web** → Settings → **Custom Domains**: `megainfomatix.com` and
-   `www.megainfomatix.com` are already listed from `render.yaml`. Click **Verify**.
-2. Same for **megainfomatix-api** → `api.megainfomatix.com`.
-3. Render issues free SSL certificates automatically after verification. DNS changes usually
-   apply within minutes, but can take up to 48 hours.
-
-## 4. Check it works
-
-- https://megainfomatix.com → "Coming soon" page; **System status** shows all three services as **Connected**
-- https://api.megainfomatix.com/api/health → `"status":"ok"`
-
-## Updating the site
+From the project folder on the Mac:
 
 ```bash
-git add -A
-git commit -m "Describe the change"
-git push
+./scripts/deploy.sh
 ```
 
-Render rebuilds and redeploys the services that changed.
+It builds the React app, uploads everything with rsync, creates or updates the Python virtualenv
+when `python/requirements.txt` changes, and restarts the app. Database migrations run automatically on start
+(`DB_AUTO_MIGRATE=true`). Data in MySQL, reports and monitoring history are kept.
 
-## Notes
+`deploy/production.env` holds the production settings, including the database password and JWT secret.
+It is git-ignored, so **never commit or share it**. `deploy/production.env.example` shows the format.
 
-- Reports and monitoring history that Python writes to `python/output/` are lost on each redeploy, because Render's
-  disk is temporary. Store them in the database or object storage, or attach a Render Disk, when that history matters.
-- Environment variables can be changed in Render → service → **Environment**. `VITE_*` values are
-  baked in at build time, so changing them needs a redeploy of the static site.
-- Registration is open to anyone. Restrict it, or create an admin account, before announcing the site.
+## First-time setup (already done on 14 Nov 2026, kept for reference)
+
+1. **Addon domain** (cPanel → Domains → Create A New Domain): `megainfomatix.com`, untick
+   "Share document root", document root `public_html/megainfomatix.com`.
+2. **Database**: `megainfomatix` + user `megainfomatix` with ALL PRIVILEGES (created with `uapi Mysql ...`).
+3. **App**: `./scripts/deploy.sh`.
+4. **Passenger**: `~/public_html/megainfomatix.com/.htaccess`:
+   ```apache
+   PassengerEnabled on
+   PassengerAppRoot "/home/mjgykn3s9utp/megainfomatix/server"
+   PassengerBaseURI "/"
+   PassengerAppType node
+   PassengerStartupFile src/server.js
+   PassengerNodejs "/home/mjgykn3s9utp/nodejs/bin/node"
+   PassengerAppEnv production
+
+   # Do not inherit the main site's WordPress rewrite rules from public_html/.htaccess
+   <IfModule mod_rewrite.c>
+   RewriteEngine Off
+   </IfModule>
+   ```
+5. **Cron** (`crontab -e`):
+   ```
+   */15 * * * * cd /home/mjgykn3s9utp/megainfomatix/python && venv/bin/python src/main.py monitor --once >> /home/mjgykn3s9utp/megainfomatix/logs/monitor.log 2>&1
+   ```
+6. **DNS** (GoDaddy → megainfomatix.com → DNS):
+
+   | Type | Name | Value |
+   |---|---|---|
+   | A | `@` | `184.168.114.12` |
+   | CNAME | `www` | `@` |
+
+7. **SSL**: cPanel → SSL/TLS Status → tick megainfomatix.com + www → **Run AutoSSL** (after DNS points to the server).
+
+## Checking it works
+
+| Address | Expected |
+|---|---|
+| https://megainfomatix.com | "Coming soon" page; System status shows API, Database and Python analytics as **Connected** |
+| https://www.megainfomatix.com | Redirects to https://megainfomatix.com |
+| https://megainfomatix.com/api/health | `"status":"ok","database":"ok","python":"ok"` |
+
+## Troubleshooting
+
+| Problem | Where to look |
+|---|---|
+| "We're sorry, but something went wrong" / blank page | `~/megainfomatix/server/stderr.log` (Passenger), or run `cd ~/megainfomatix/server && ~/nodejs/bin/node src/server.js` over SSH to see the error |
+| `python: "unreachable"` in health | `cd ~/megainfomatix/python && venv/bin/python src/main.py query health` |
+| Monitoring not running | `crontab -l` and `tail ~/megainfomatix/logs/monitor.log` |
+| Restart the app manually | `touch ~/megainfomatix/server/tmp/restart.txt` |
+| "Not secure" warning | Run AutoSSL (step 7) and wait ~10 minutes |

@@ -5,7 +5,7 @@
   "description": "MegaInfomatix: React client, Node.js/Express API, Python monitoring & analytics",
   "scripts": {
     "setup": "npm install && npm install --prefix server && npm install --prefix client && npm run python:setup",
-    "python:setup": "cd python && python3 -m venv venv && venv/bin/pip install -r requirements.txt",
+    "python:setup": "cd python && python3 -m venv venv && venv/bin/pip install -r requirements-dev.txt",
     "dev": "concurrently -k -n server,client,python -c blue,green,yellow \"npm:server\" \"npm:client\" \"npm:python:serve\"",
     "server": "npm run dev --prefix server",
     "client": "npm run dev --prefix client",

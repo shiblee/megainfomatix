@@ -49,8 +49,19 @@ const config = Object.freeze({
     secret: process.env.JWT_SECRET || '',
     expiresIn: process.env.JWT_EXPIRES_IN || '1d',
   }),
-  pythonServiceUrl: normalizeServiceUrl(process.env.PYTHON_SERVICE_URL),
-  pythonServiceTimeoutMs: Number(process.env.PYTHON_SERVICE_TIMEOUT_MS) || 10000,
+  // Python layer: HTTP service (PYTHON_SERVICE_URL) or on-demand CLI (PYTHON_BIN), e.g. on shared hosting.
+  python: Object.freeze({
+    serviceUrl: normalizeServiceUrl(process.env.PYTHON_SERVICE_URL),
+    bin: process.env.PYTHON_BIN || '',
+    appDir: path.resolve(ROOT_DIR, process.env.PYTHON_APP_DIR || 'python'),
+    timeoutMs: Number(process.env.PYTHON_SERVICE_TIMEOUT_MS) || 60000,
+  }),
+  // Production on a single domain: Node also serves the built React app (client/dist).
+  serveClient: toBool(process.env.SERVE_CLIENT, false),
+  clientDistDir: path.resolve(ROOT_DIR, process.env.CLIENT_DIST_DIR || 'client/dist'),
+  trustProxy: toBool(process.env.TRUST_PROXY, false),
+  // Redirect other hostnames (e.g. www.) to this one. Empty = no redirect.
+  canonicalHost: (process.env.CANONICAL_HOST || '').trim().toLowerCase(),
 });
 
 const PLACEHOLDER_SECRETS = new Set(['', 'replace_with_secure_secret', 'change_me']);

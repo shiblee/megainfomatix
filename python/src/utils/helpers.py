@@ -8,9 +8,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-import numpy as np
-import pandas as pd
-
 
 def utc_now() -> datetime:
     return datetime.now(timezone.utc)
@@ -37,6 +34,9 @@ def safe_float(value: Any, default: float = 0.0) -> float:
 
 def to_jsonable(value: Any) -> Any:
     """Recursively convert numpy/pandas values into JSON-serialisable Python types."""
+    import numpy as np
+    import pandas as pd
+
     if isinstance(value, dict):
         return {str(k): to_jsonable(v) for k, v in value.items()}
     if isinstance(value, (list, tuple, set)):

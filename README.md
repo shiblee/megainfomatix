@@ -109,7 +109,7 @@ Or step by step:
 npm install                                  # root tools (concurrently)
 npm install --prefix server
 npm install --prefix client
-cd python && python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt
+cd python && python3 -m venv venv && source venv/bin/activate && pip install -r requirements-dev.txt
 ```
 
 ## Configuration
@@ -137,7 +137,9 @@ node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 | `DB_SSL` | server | `false` | Enable TLS for PostgreSQL |
 | `DB_AUTO_MIGRATE` | server | `true` (non-prod) | Apply migrations on start |
 | `JWT_SECRET` / `JWT_EXPIRES_IN` | server | — / `1d` | Token signing |
-| `PYTHON_SERVICE_URL` | server | `http://localhost:8000` | Python service; empty = analytics routes return 503 |
+| `PYTHON_SERVICE_URL` | server | `http://localhost:8000` | Python over HTTP (`main.py serve`) |
+| `PYTHON_BIN` | server | – | Python over CLI instead (runs `main.py query …` on demand; used in production) |
+| `SERVE_CLIENT` / `TRUST_PROXY` / `CANONICAL_HOST` | server | off | Production: serve the React build, trust the proxy, redirect to one https host |
 | `VITE_API_URL` | client | `http://localhost:5050/api` | API base URL used by the browser |
 | `MONITORING_INTERVAL_SECONDS` | python | `60` | Scheduled monitoring interval |
 | `ANOMALY_ZSCORE_THRESHOLD` | python | `3.0` | Anomaly sensitivity |
@@ -153,7 +155,7 @@ without changing any code. Use the **same value** in `server/.env` and `python/.
 |---|---|---|
 | SQLite (default) | `sqlite:///data/megainfomatix.db` (relative to project root) | none |
 | PostgreSQL | `postgresql://user:pass@localhost:5432/megainfomatix` | Python: `pip install "psycopg[binary]"` |
-| MySQL | `mysql://user:pass@localhost:3306/megainfomatix` | Node: `npm i mysql2 --prefix server`; Python: `pip install pymysql` |
+| MySQL (production) | `mysql://user:pass@localhost:3306/megainfomatix` | included (`mysql2`, `PyMySQL`) |
 
 Migrations:
 
@@ -265,8 +267,9 @@ with its own layout. Global theme tokens live in `client/src/styles/global.css`.
 
 ## Deployment
 
-Production runs on Render at **https://megainfomatix.com**. See [DEPLOYMENT.md](DEPLOYMENT.md)
-for the Render setup and GoDaddy DNS records.
+Production runs on GoDaddy cPanel hosting at **https://megainfomatix.com**, with one Node app serving the
+React build and `/api`, MySQL, and Python run on demand plus a cron job. Deploy updates with `./scripts/deploy.sh`.
+See [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ## Notes
 

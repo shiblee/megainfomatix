@@ -1,0 +1,6 @@
+# Local development: runtime + internal HTTP API + tests
+-r requirements.txt
+fastapi==0.162.7
+uvicorn==0.54.0
+pytest==9.2.0
+httpx==0.28.1

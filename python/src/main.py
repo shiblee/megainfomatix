@@ -1,31 +1,37 @@
 """Python layer entry point.
 
-    python src/main.py run                 # run the full pipeline once and write a report
-    python src/main.py monitor             # monitor on a schedule (MONITORING_INTERVAL_SECONDS)
-    python src/main.py monitor --once      # take a single monitoring snapshot
-    python src/main.py serve               # start the internal API for the Node.js server
+    python src/main.py run                     # run the full pipeline once and write a report
+    python src/main.py monitor                 # monitor on a schedule (MONITORING_INTERVAL_SECONDS)
+    python src/main.py monitor --once          # take a single snapshot (use this from cron)
+    python src/main.py serve                   # start the internal HTTP API (PYTHON_SERVICE_URL)
+    python src/main.py query <name>            # run one operation, print a JSON envelope (used by Node)
+                                               #   names: health, monitoring-snapshot, analysis-summary,
+                                               #          reports-latest, reports-generate
+Heavy modules are imported inside each command so `query health` stays fast.
 """
 from __future__ import annotations
 
 import argparse
 import json
 import logging
+import sys
 import time
 
 from config.config import get_settings
-from database.db import check_connection
-from pipeline import build_monitor, run_pipeline
 from utils.helpers import setup_logging
 
 logger = logging.getLogger("megainfomatix")
 
 
 def cmd_run(_args: argparse.Namespace) -> None:
-    report = run_pipeline()
-    print(json.dumps(report, indent=2))
+    from pipeline import run_pipeline
+
+    print(json.dumps(run_pipeline(), indent=2))
 
 
 def cmd_monitor(args: argparse.Namespace) -> None:
+    from pipeline import build_monitor
+
     settings = get_settings()
     monitor = build_monitor(settings)
     interval = args.interval or settings.monitoring_interval_seconds
@@ -60,7 +66,23 @@ def cmd_serve(args: argparse.Namespace) -> None:
     )
 
 
+def cmd_query(args: argparse.Namespace) -> None:
+    """Print exactly one JSON object on stdout: {"ok": true, "data": ...} or {"ok": false, "status", "detail"}."""
+    from api.handlers import QUERIES, ServiceError
+
+    try:
+        result = {"ok": True, "data": QUERIES[args.name]()}
+    except ServiceError as error:
+        result = {"ok": False, "status": error.status, "detail": error.detail}
+    except Exception as error:  # noqa: BLE001 - report every failure as JSON for the caller
+        logger.exception("Query %s failed", args.name)
+        result = {"ok": False, "status": 500, "detail": str(error)}
+    sys.stdout.write(json.dumps(result))
+
+
 def build_parser() -> argparse.ArgumentParser:
+    from api.handlers import QUERIES
+
     parser = argparse.ArgumentParser(description="MegaInfomatix data monitoring & analysis")
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -77,15 +99,19 @@ def build_parser() -> argparse.ArgumentParser:
     serve.add_argument("--reload", action="store_true", help="Auto-reload on code changes (dev)")
     serve.set_defaults(func=cmd_serve)
 
+    query = sub.add_parser("query", help="Run one operation and print JSON (used by the Node.js server)")
+    query.add_argument("name", choices=sorted(QUERIES))
+    query.set_defaults(func=cmd_query)
+
     return parser
 
 
 def main() -> None:
     settings = get_settings()
-    setup_logging(settings.log_level)
     args = build_parser().parse_args()
-
-    logger.info("Environment: %s | database reachable: %s", settings.env, check_connection())
+    # Keep stderr quiet for machine calls; logs never go to stdout.
+    setup_logging("WARNING" if args.command == "query" else settings.log_level)
+    logger.info("Environment: %s", settings.env)
     args.func(args)
 
 

@@ -34,3 +34,8 @@ npm-debug.log*
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# Deployment (secrets + build output)
+deploy/build/
+deploy/production.env
+deploy/*.zip

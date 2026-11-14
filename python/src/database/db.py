@@ -14,11 +14,15 @@ import re
 from functools import lru_cache
 from pathlib import Path
 
-import pandas as pd
+from typing import TYPE_CHECKING
+
 from sqlalchemy import Engine, column, create_engine, func, inspect, select, table, text
 from sqlalchemy.pool import StaticPool
 
 from config.config import ROOT_DIR, get_settings
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 INTERNAL_TABLE_PREFIXES = ("knex_", "sqlite_", "alembic_")
 
@@ -89,7 +93,9 @@ def count_rows(table: str, engine: Engine | None = None) -> int:
         return int(conn.execute(select(func.count()).select_from(table_ref(table))).scalar_one())
 
 
-def read_table(table: str, engine: Engine | None = None, columns: list[str] | None = None) -> pd.DataFrame:
+def read_table(table: str, engine: Engine | None = None, columns: list[str] | None = None) -> "pd.DataFrame":
+    import pandas as pd
+
     engine = engine or get_engine()
     if table not in list_tables(engine):
         return pd.DataFrame(columns=columns or [])

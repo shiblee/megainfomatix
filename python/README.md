@@ -9,7 +9,7 @@ and exposes an internal API that the Node.js server calls.
 cd python
 python3 -m venv venv
 source venv/bin/activate          # Windows: venv\Scripts\activate
-pip install -r requirements.txt
+pip install -r requirements-dev.txt   # runtime only: requirements.txt
 cp .env.example .env              # if not already present
 ```
 
@@ -20,6 +20,7 @@ python src/main.py run                  # full pipeline once → output/reports/
 python src/main.py monitor              # scheduled monitoring loop
 python src/main.py monitor --once       # single snapshot
 python src/main.py serve [--reload]     # internal API on http://127.0.0.1:8000 (docs: /docs)
+python src/main.py query health         # one operation as JSON (how Node calls Python in production)
 python -m pytest -q                     # tests
 ```
 

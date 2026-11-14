@@ -1,18 +1,14 @@
 /**
- * Generic controllers that forward requests to the Python service.
+ * Generic controller factory for endpoints backed by the Python layer.
  * Used by the monitoring, analysis and reports modules.
  */
 const pythonService = require('../services/pythonService');
 const { sendSuccess } = require('../utils/response');
 
 const forward =
-  (pythonPath, { method = 'GET', message = 'Success', statusCode = 200 } = {}) =>
+  (operation, { message = 'Success', statusCode = 200 } = {}) =>
   async (req, res) => {
-    const data = await pythonService.request(pythonPath, {
-      method,
-      query: req.query,
-      body: method === 'GET' ? undefined : req.body,
-    });
+    const data = await pythonService.call(operation);
     return sendSuccess(res, data, { message, statusCode });
   };
 
