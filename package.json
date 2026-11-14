@@ -1,0 +1,23 @@
+{
+  "name": "megainfomatix",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MegaInfomatix: React client, Node.js/Express API, Python monitoring & analytics",
+  "scripts": {
+    "setup": "npm install && npm install --prefix server && npm install --prefix client && npm run python:setup",
+    "python:setup": "cd python && python3 -m venv venv && venv/bin/pip install -r requirements.txt",
+    "dev": "concurrently -k -n server,client,python -c blue,green,yellow \"npm:server\" \"npm:client\" \"npm:python:serve\"",
+    "server": "npm run dev --prefix server",
+    "client": "npm run dev --prefix client",
+    "python:serve": "cd python && venv/bin/python src/main.py serve",
+    "python:run": "cd python && venv/bin/python src/main.py run",
+    "python:monitor": "cd python && venv/bin/python src/main.py monitor",
+    "db:migrate": "npm run db:migrate --prefix server",
+    "build": "npm run build --prefix client",
+    "test": "npm test --prefix server && npm run test:python",
+    "test:python": "cd python && venv/bin/python -m pytest -q"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}

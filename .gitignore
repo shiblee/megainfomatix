@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+python/venv/
+.venv/
+
+# Environment (commit only .env.example)
+.env
+.env.*
+!.env.example
+
+# Build output
+client/dist/
+
+# Runtime data
+data/
+python/output/
+*.db
+*.sqlite
+*.sqlite3
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.python-version
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
