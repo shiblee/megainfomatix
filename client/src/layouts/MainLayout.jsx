@@ -11,7 +11,7 @@ export default function MainLayout() {
         <Outlet />
       </main>
       <footer className="app-footer container">
-        © {new Date().getFullYear()} {env.appName}
+        © {new Date().getFullYear()} {env.appName} · Digital product marketplace
       </footer>
     </div>
   );

@@ -16,6 +16,7 @@ import MainLayout from '../layouts/MainLayout';
 import ErrorPage from '../pages/ErrorPage';
 import Home from '../pages/Home';
 import NotFound from '../pages/NotFound';
+import Status from '../pages/Status';
 
 export const router = createBrowserRouter([
   {
@@ -24,6 +25,7 @@ export const router = createBrowserRouter([
     errorElement: <ErrorPage />,
     children: [
       { index: true, element: <Home /> },
+      { path: 'status', element: <Status /> },
 
       {
         element: <ProtectedRoute />,
