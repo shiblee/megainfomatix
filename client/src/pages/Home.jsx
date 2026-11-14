@@ -3,6 +3,7 @@
  * Content lives in the arrays below, so wording can be changed without touching the layout.
  */
 import Icon from '../components/Icon';
+import { FAQ } from '../content/site';
 import '../styles/home.css';
 
 const FLOW = [
@@ -183,6 +184,21 @@ export default function Home() {
             </li>
           ))}
         </ul>
+      </section>
+
+      {/* FAQ (same content as the FAQPage structured data) */}
+      <section id="faq" className="section" aria-labelledby="faq-title">
+        <SectionHeader id="faq-title" eyebrow="FAQ" title="Questions people ask about MegaInfomatix" />
+        <div className="faq">
+          {FAQ.map((item, index) => (
+            <details key={item.question} className="faq__item" open={index === 0}>
+              <summary>
+                <h3>{item.question}</h3>
+              </summary>
+              <p>{item.answer}</p>
+            </details>
+          ))}
+        </div>
       </section>
 
       {/* Closing */}

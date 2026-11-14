@@ -1,10 +1,15 @@
 import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
+import { createRoot, hydrateRoot } from 'react-dom/client';
 import App from './App';
 import './styles/global.css';
 
-createRoot(document.getElementById('root')).render(
+const container = document.getElementById('root');
+const app = (
   <StrictMode>
     <App />
-  </StrictMode>,
+  </StrictMode>
 );
+
+// Pre-rendered pages already contain the HTML: attach to it instead of re-rendering.
+if (container.firstElementChild) hydrateRoot(container, app);
+else createRoot(container).render(app);

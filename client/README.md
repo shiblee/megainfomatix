@@ -5,7 +5,7 @@
 ```bash
 npm install
 npm run dev        # http://localhost:3000
-npm run build      # production build → dist/
+npm run build      # production build → dist/ (+ pre-rendered HTML, sitemap.xml, robots.txt)
 npm run preview    # serve the build locally
 ```
 
@@ -24,5 +24,5 @@ npm run preview    # serve the build locally
 | `config/` | Env values and navigation items |
 | `styles/global.css` | Design tokens and base styles |
 
-`pages/Home.jsx` is a **temporary placeholder**. The final Index page arrives in Phase 2.
+`pages/Home.jsx` is the index page; its SEO text lives in `content/site.js`. See [SEO.md](../SEO.md).
 Note: Vite uses `client/index.html` as its HTML entry. `public/` holds only static assets.

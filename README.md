@@ -265,6 +265,11 @@ component, or create a new page and point the `index: true` route in `client/src
 at it. If the Index page needs its own full-screen shell, add it as a separate top-level route
 with its own layout. Global theme tokens live in `client/src/styles/global.css`.
 
+## SEO
+
+Pre-rendered pages, meta tags, structured data, sitemap and robots.txt are generated on every build.
+See [SEO.md](SEO.md) for how it works, how to change the wording and how to add pages that rank.
+
 ## Deployment
 
 Production runs on GoDaddy cPanel hosting at **https://megainfomatix.com**, with one Node app serving the

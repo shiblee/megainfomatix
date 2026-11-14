@@ -39,3 +39,4 @@ npm-debug.log*
 deploy/build/
 deploy/production.env
 deploy/*.zip
+client/dist-ssr/

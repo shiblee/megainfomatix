@@ -23,8 +23,9 @@ fi
 rm -rf "$OUT/build"
 mkdir -p "$PKG/server" "$PKG/client" "$PKG/python"
 
-echo "1/3 Building the React client…"
-(cd "$ROOT/client" && VITE_API_URL=/api npx vite build --outDir "$PKG/client/dist" --emptyOutDir --logLevel warn)
+echo "1/3 Building the React client (pre-rendered pages, sitemap, robots.txt)…"
+(cd "$ROOT/client" && VITE_API_URL=/api npm run build --silent >/dev/null)
+cp -R "$ROOT/client/dist" "$PKG/client/dist"
 
 echo "2/3 Copying the server and installing production libraries…"
 cp -R "$ROOT/server/src" "$PKG/server/src"
